@@ -1,7 +1,7 @@
 package main
 
 import (
-	"code.google.com/p/goplan9/plan9/acme"
+	"9fans.net/go/acme"
 	"fmt"
 	"io"
 	"os"
@@ -38,9 +38,6 @@ func acmeCurrentWin() (*acme.Win, error) {
 	id, err := strconv.Atoi(winid)
 	if err != nil {
 		return nil, fmt.Errorf("invalid $winid %q", winid)
-	}
-	if err := setNameSpace(); err != nil {
-		return nil, err
 	}
 	win, err := acme.Open(id, nil)
 	if err != nil {
