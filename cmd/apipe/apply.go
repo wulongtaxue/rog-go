@@ -3,7 +3,7 @@
 // by applying minimal changes.
 //
 // For example:
-// 
+//
 //	apipe gofmt
 //
 // will alter only the pieces of source code that
@@ -11,9 +11,9 @@
 package main
 
 import (
+	"9fans.net/go/acme"
 	"bufio"
 	"bytes"
-	"code.google.com/p/goplan9/plan9/acme"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,7 +26,7 @@ import (
 
 func main() {
 	if err := Main(); err != nil {
-		fmt.Fprintf(os.Stderr, "apipe: %v", err)
+		fmt.Fprintf(os.Stderr, "apipe: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -49,15 +49,20 @@ func Main() error {
 		return err
 	}
 	bodyFile.Seek(0, 0)
+
+	var cmdOutput bytes.Buffer
+
 	pcmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	pcmd.Stdin = bodyFile
+	pcmd.Stdout = &cmdOutput
 	pcmd.Stderr = os.Stderr
 
-	cmd := exec.Command("diff", bodyFile.Name(), "-")
-	cmd.Stdin, err = pcmd.StdoutPipe()
-	if err != nil {
-		return err
+	if err := pcmd.Run(); err != nil && cmdOutput.Len() == 0 {
+		return fmt.Errorf("command failed: %v", err)
 	}
+
+	cmd := exec.Command("diff", bodyFile.Name(), "-")
+	cmd.Stdin = &cmdOutput
 	cmd.Stderr = os.Stderr
 	diffOut, err := cmd.StdoutPipe()
 	if err != nil {
@@ -65,9 +70,6 @@ func Main() error {
 	}
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("cannot start diff: %v", err)
-	}
-	if err := pcmd.Start(); err != nil {
-		return fmt.Errorf("cannot start %q: %v", cmdArgs[0], err)
 	}
 	// TODO this doesn't appear to have the desired effect -
 	// changes made after "nomark" don't seem to be undoable.
